@@ -9,10 +9,10 @@
    
     "category": "Warehouse",
     "depends": [
-        "stock"
+        'delivery', 'stock'
         
     ],
-    "data": [
+    "data": ['views/delivery_carrier.xml'
       
     ],
     
