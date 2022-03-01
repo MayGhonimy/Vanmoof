@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from odoo import fields, models,_
+from odoo import fields, models,api,_
 from .postNL_requests import PostNLRequets
 import logging
 _logger = logging.getLogger(__name__)
@@ -27,13 +27,12 @@ class DeliveryCarrier(models.Model):
                         
 
 
-    def get_product_code(self):
+    def get_product_code(self,picking):
         """@TODO this function can be changed to check for sender 
         and reciver destion or add the product option to the SO or stock picking.
         Might need to add more paramters in the future """
 
-        return self.postnl_default_product_code
-    
+        return picking.carrier_id.postnl_default_product_code
     
     def _prepare_shipments_addresses_data(self,picking):
         vals = {}
@@ -66,7 +65,7 @@ class DeliveryCarrier(models.Model):
                                 "Currency": "EUR",
                                 "HandleAsNonDeliverable": "false",
                                 "License": "true",
-                                "LicenseNr":self.postnl_gloable_license_nr or ' ',
+                                "LicenseNr":self.picking.carrier_id.postnl_gloable_license_nr or ' ',
                                 "ShipmentType": "Commercial Goods"})
         _logger.info(vals)
         return vals
@@ -95,31 +94,44 @@ class DeliveryCarrier(models.Model):
         vals.update({ "Addresses" : [self._prepare_shipments_addresses_data(picking)],                    
                       "Contacts" : [self._prepare_shipments_contacts_data(picking)],
                       "Dimension": {"Weight": "4300"},
-                      "ProductCodeDelivery": self.get_product_code()
+                      "ProductCodeDelivery": self.get_product_code(picking)
                     })
        
-        if self.get_product_code() == '3085':
+        if self.get_product_code(picking) == '4945':
             # customs ar required in globale shipping only and should't exist in other types
             vals["Customs"] = self._prepare_customs(picking)
         return vals       
 
-
-    def ship(self,pickings):
+    
+    def delivery_postnl_send_shipping(self,pickings):
         _logger.info('starting the ship PostNL Porcess')
+        #picking = self.env['stock.picking'].search([('carrier_id','=',2),('id','!=',1)],limit=1)
+        for picking in pickings:
+            current_date = time.strftime('%d-%m-%Y %H:%M:%S')
+            
+            data = {
+                "Customer": self._prepare_customer_data(picking),
+                "Message": {"MessageID": "01",
+                            "MessageTimeStamp": current_date,
+                            "Printertype": "GraphicFile|PDF"},
+                "Shipments": [self._prepare_shipments_data(picking)]
+            }
+            
+            _logger.info('JSON body to the shipping api: %s' % ((data)))
+            response = PostNLRequets(self.api_key).ship(data)        
+            _logger.info('PostNL Response : %s' % (response))
+
+            #TODO insepct repsonse and get barcode and tracking_number and Generated file and add them to the stock.picking
+            return [{"exact_price": False, "tracking_number": False}]
+
+    def send_shipping(self,pickings):
         
-        current_date = time.strftime('%d-%m-%Y %H:%M:%S')
-        
-        data = {
-            "Customer": self._prepare_customer_data(picking),
-            "Message": {"MessageID": "01",
-                        "MessageTimeStamp": current_date,
-                        "Printertype": "GraphicFile|PDF"},
-            "Shipments": [self._prepare_shipments_data(picking)]
-        }
-        
-        _logger.info('JSON body to the shipping api: %s' % ((data)))
-        response = PostNLRequets(self.api_key).ship(data)        
-        _logger.info('PostNL Response : %s' % (response.content))
+        super().send_shipping(pickings)
+        self.delivery_postnl_send_shipping(pickings)
+
+
+
+
         
         
 
