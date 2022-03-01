@@ -27,9 +27,9 @@ class PostNLRequets:
                'apikey': self.api_key}
         url = f'{self.PostNL_URL}v1/shipment'
         response = requests.post(url, data=body, headers=hdr)
+        response_json_string=response.content.decode('utf-8')
+        response_json_object = json.loads(str(response_json_string))
         if response.status_code != 200:
-            json_object_string=response.content.decode('utf-8')
-            json_object = json.loads(str(json_object_string))
-            raise ValidationError(_(f"Error<{response.status_code}>: {json_object['fault']['faultstring']}"))    
+            raise ValidationError(_(f"Error<{response.status_code}>: {response_json_object['fault']['faultstring']}"))    
 
-        return response
+        return dict(response_json_object)
