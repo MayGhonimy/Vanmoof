@@ -2,6 +2,7 @@
 
 from odoo import fields, models,api,_
 from .postNL_requests import PostNLRequets
+from odoo.exceptions import UserError
 import logging
 _logger = logging.getLogger(__name__)
 from odoo.exceptions import UserError
@@ -102,7 +103,6 @@ class DeliveryCarrier(models.Model):
             vals["Customs"] = self._prepare_customs(picking)
         return vals       
 
-    
     def delivery_postnl_send_shipping(self,pickings):
         _logger.info('starting the ship PostNL Porcess')
         #picking = self.env['stock.picking'].search([('carrier_id','=',2),('id','!=',1)],limit=1)
@@ -124,13 +124,13 @@ class DeliveryCarrier(models.Model):
             #TODO insepct repsonse and get barcode and tracking_number and Generated file and add them to the stock.picking
             return [{"exact_price": False, "tracking_number": False}]
 
-    def send_shipping(self,pickings):
-        
-        super().send_shipping(pickings)
-        self.delivery_postnl_send_shipping(pickings)
+    def send_shipping(self,picking):
+        self.ensure_one()        
+        super().send_shipping(picking)
+        self.delivery_postnl_send_shipping(picking)
 
-
-
+    def delivery_postnl_cancel_shipment(self, picking):
+        raise UserError(_("Can Not Possible To Cancel PostNL Shipment!"))
 
         
         
