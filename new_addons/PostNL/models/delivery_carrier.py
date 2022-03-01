@@ -13,9 +13,7 @@ import time
 class DeliveryCarrier(models.Model):
     _inherit = "delivery.carrier"
 
-    delivery_type = fields.Selection(
-        selection_add=[("post_nl", "PostNL")]
-    )
+    delivery_type = fields.Selection(selection_add=[("post_nl", "PostNL")])
     api_key = fields.Char('PostNL Api Key')
 
     postnl_customer_code = fields.Char("Company Code")
@@ -94,7 +92,7 @@ class DeliveryCarrier(models.Model):
         vals = {}
         vals.update({ "Addresses" : [self._prepare_shipments_addresses_data(picking)],                    
                       "Contacts" : [self._prepare_shipments_contacts_data(picking)],
-                      "Dimension": {"Weight": "4300"},
+                      "Dimension": {"Weight": str(sum([line.weight for line in picking.move_lines])) },
                       "ProductCodeDelivery": self.get_product_code(picking)
                     })
        
