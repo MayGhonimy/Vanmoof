@@ -149,11 +149,12 @@ class DeliveryCarrier(models.Model):
             # or tracking_number and Generated file
             # then send them to the stock_picking.
             try:
-                if 'Barcode' in response['ResponseShipments']:
-                    return [{
-                        "exact_price": self.postnl_base_shipping_cost,
-                        "tracking_number": response['ResponseShipments']['Barcode']
-                        }]
+                for response_shipment in response['ResponseShipments']:
+                    if 'Barcode' in response_shipment:
+                        return [{
+                            "exact_price": self.postnl_base_shipping_cost or 0,
+                            "tracking_number": response_shipment['Barcode']
+                            }]
             except Exception:
                 raise UserError(
                     _('Error while shipping to PostNL.\n'
