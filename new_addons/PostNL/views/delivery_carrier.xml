@@ -15,8 +15,14 @@
                         <group>
                             <field name="postnl_default_product_code" attrs="{'required': [('delivery_type', '=', 'post_nl')]}"/>
                             <field name="api_key" attrs="{'required': [('delivery_type', '=', 'post_nl')]}"  password="True"/>
+
                         </group>
 
+                    </group>
+                    <group>
+                        <group string="Pricing">
+                             <field name="postnl_base_shipping_cost"/>
+                        </group>
                     </group>
                 </page>
              </xpath>

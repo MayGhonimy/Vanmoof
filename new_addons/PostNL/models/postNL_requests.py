@@ -7,7 +7,7 @@ import json
 
 
 class PostNLRequets:
-    def __init__(self, api_key=None,prod_environment=False):
+    def __init__(self, api_key=None, prod_environment=False):
         if api_key:
             self.api_key = api_key
         else:
@@ -24,17 +24,19 @@ class PostNLRequets:
         try:
             body = json.loads(json.dumps(body))
         except Exception as e:
-            raise UserError(_('Data Error: [%s]'% (e)))
+            raise UserError(_('Data Error: [%s]' % (e)))
         hdr = {'content-type': 'application/json',
                'apikey': self.api_key}
         url = f'{self.postNL_url}v1/shipment'
         try:
             response = requests.post(url, data=body, headers=hdr)
         except Exception as e:
-            raise UserError(_('Error Connecting to PostNL: [%s]'% (e)))
+            raise UserError(_('Error Connecting to PostNL : [%s]' % (e)))
         response_json_string = response.content.decode('utf-8')
         response_json_object = json.loads(str(response_json_string))
         if response.status_code != 200:
-            raise ValidationError(_(f"Error<{response.status_code}>: {response_json_object['fault']['faultstring']}"))
-
+            raise ValidationError(
+                _(f"Error<{response.status_code}>:"
+                  f" {response_json_object['fault']['faultstring']}")
+                )
         return dict(response_json_object)
