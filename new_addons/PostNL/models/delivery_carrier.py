@@ -25,8 +25,11 @@ class DeliveryCarrier(models.Model):
     postnl_gloable_license_nr = fields.Char("Global Shipping License")
     postnl_base_shipping_cost = fields.Float('Base Shipping Coast')
 
-    def weight_convertor(self, from_uom, weight):
-        """Weigh convertor because PostNL only accept shippiments in gram."""
+    def weight_converter(self, from_uom, weight):
+        """Weigh convertor because PostNL only accept shippiments in gram.
+        @TODO we can search for gram in the uom.uom table
+        in case that the uom.product_uom_gram was deleted
+        and raise and error if no unit of gram mesaure exists."""
         to_uom = self.env.ref('uom.product_uom_gram')
         if to_uom:
             return from_uom._compute_quantity(weight, to_uom)
@@ -63,7 +66,7 @@ class DeliveryCarrier(models.Model):
         return vals
 
     def _prepare_customs(self, picking):
-        """@TODO 1- add a function to switch all values
+        """@TODO add a function to switch all values
         to EUR (POSTNL only accept EURO or USS)."""
         vals = {}
         _logger.info('getting customs for gloabl shippings only')
@@ -73,7 +76,7 @@ class DeliveryCarrier(models.Model):
                 "Description": line.product_id.name,
                 "Quantity": line.product_uom_qty,
                 "Value": abs(line.value),
-                "Weight": self.weight_convertor(
+                "Weight": self.weight_converter(
                     picking.weight_uom_id, line.weight
                     )}
                 for line in picking.move_lines],
@@ -108,12 +111,12 @@ class DeliveryCarrier(models.Model):
     def _prepare_shipments_data(self, picking):
         vals = {}
         if picking.shipping_weight != 0:
-            weight = self.weight_convertor(
+            weight = self.weight_converter(
                 picking.weight_uom_id,
                 picking.shipping_weight
                 )
         else:
-            weight = self.weight_convertor(
+            weight = self.weight_converter(
                 picking.weight_uom_id,
                 sum([line.weight for line in picking.move_lines])
                 )
@@ -157,8 +160,8 @@ class DeliveryCarrier(models.Model):
                             }]
             except Exception:
                 raise UserError(
-                    _('Error while shipping to PostNL.\n'
-                      'Please revise you shippment data.')
+                    _('Error While Shipping to PostNL.\n'
+                      'Please Revise Your Shippment Data.')
                     )
 
     def send_shipping(self, picking):
@@ -174,4 +177,4 @@ class DeliveryCarrier(models.Model):
             return False
 
     def cancel_shipment(self,  picking):
-        raise UserError(_("Can Not Possible To Cancel PostNL Shipment!"))
+        raise UserError(_("Can't Cancel PonstNL Shipments"))
