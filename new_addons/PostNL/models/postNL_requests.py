@@ -28,7 +28,10 @@ class PostNLRequets:
         hdr = {'content-type': 'application/json',
                'apikey': self.api_key}
         url = f'{self.postNL_url}v1/shipment'
-        response = requests.post(url, data=body, headers=hdr)
+        try:
+            response = requests.post(url, data=body, headers=hdr)
+        except Exception as e:
+            raise UserError(_('Error Connecting to PostNL: [%s]'% (e)))
         response_json_string = response.content.decode('utf-8')
         response_json_object = json.loads(str(response_json_string))
         if response.status_code != 200:
