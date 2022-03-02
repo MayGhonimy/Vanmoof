@@ -109,13 +109,24 @@ class DeliveryCarrier(models.Model):
             response = PostNLRequets(self.api_key,self.prod_environment).ship(data)
             _logger.info('PostNL Response :  %s' % (response))
 
-            # TODO insepct repsonse and get barcode and tracking_number and Generated file and add them to the stock.picking
-            return [{"exact_price":  False,  "tracking_number":  False}]
+            # TODO insepct repsonse and get barcode 
+            #or tracking_number and Generated file and add them to the stock.picking
+            return [{"exact_price":  False,  "tracking_number":  "test number"},]
 
     def send_shipping(self, picking):
         self.ensure_one()
         super().send_shipping(picking)
-        self.delivery_postnl_send_shipping(picking)
+        return self.delivery_postnl_send_shipping(picking)
 
-    def delivery_postnl_cancel_shipment(self,  picking):
+    def cancel_shipment(self,  picking):
         raise UserError(_("Can Not Possible To Cancel PostNL Shipment!"))
+
+    def get_tracking_link(self, picking):
+        if self.default_tracking_url and picking.carrier_tracking_ref:
+            return '%s%s' % (self.default_tracking_url, picking.carrier_tracking_ref)
+        elif picking.carrier_tracking_ref:
+            url='https://www.internationalparceltracking.com/#/search?barcode='
+            '%s%s' % (url, picking.carrier_tracking_ref)
+        else:
+            return False
+
