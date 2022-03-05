@@ -84,6 +84,7 @@ class DeliveryCarrier(models.Model):
             "HandleAsNonDeliverable":  "false",
             "License":  "true",
             "LicenseNr": picking.carrier_id.postnl_gloable_license_nr or ' ',
+
             "ShipmentType":  "Commercial Goods"})
         _logger.info(vals)
         return vals
@@ -144,10 +145,12 @@ class DeliveryCarrier(models.Model):
             })
         return vals
 
+
     def delivery_postnl_send_shipping(self, pickings):
         _logger.info('starting the ship PostNL Porcess')
         for picking in pickings:
             data = self._prepare_shipping_body(picking)
+
             _logger.info('JSON body to the shipping api:  %s' % ((data)))
             response = PostNLRequets(
                 self.api_key, self.prod_environment).ship(data)
@@ -158,6 +161,7 @@ class DeliveryCarrier(models.Model):
             # then send them to the stock_picking.
             # The rest is just a guess base on
             # PostNL api response example.
+
             try:
                 for response_shipment in response['ResponseShipments']:
                     if 'Barcode' in response_shipment:
