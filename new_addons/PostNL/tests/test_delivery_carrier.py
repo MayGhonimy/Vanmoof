@@ -1,6 +1,8 @@
-from odoo.tests.common import Form,SavepointCase
+from odoo.tests.common import Form, SavepointCase
 from odoo.tools import mute_logger
+from odoo.addons.PostNL.models.postNL_requests import PostNLRequets
 import json
+
 
 class TestDeliveryCarrier(SavepointCase):
     @classmethod
@@ -16,6 +18,7 @@ class TestDeliveryCarrier(SavepointCase):
             {
                 "name": "post_nl",
                 "delivery_type": "post_nl",
+                "prod_environment": False,
                 "product_id": cls.serice_product.id,
             }
         )
@@ -23,18 +26,18 @@ class TestDeliveryCarrier(SavepointCase):
             {
                 "name": "post_nl Gloable",
                 "delivery_type": "post_nl",
+                "prod_environment": False,
                 "product_id": cls.serice_product.id,
                 "postnl_default_product_code": "4945",
             }
         )
 
-        
         cls.sale = cls.env["sale.order"].create(
             {
                 "partner_id": cls.partner_18.id,
                 "partner_shipping_id": cls.partner_18.id,
-                "state":"draft",
-                "carrier_id":cls.carrier.id,
+                "state": "draft",
+                "carrier_id": cls.carrier.id,
                 "order_line": [
                     (
                         0,
@@ -53,8 +56,8 @@ class TestDeliveryCarrier(SavepointCase):
             {
                 "partner_id": cls.partner_18.id,
                 "partner_shipping_id": cls.partner_18.id,
-                "state":"draft",
-                "carrier_id":cls.carrier_gloable.id,
+                "state": "draft",
+                "carrier_id": cls.carrier_gloable.id,
                 "order_line": [
                     (
                         0,
@@ -76,33 +79,45 @@ class TestDeliveryCarrier(SavepointCase):
 
     def test_check_type(self):
         """ Checking Carrier Type"""
-        self.assertEqual(self.picking.carrier_id.delivery_type, 'post_nl',
-                'delivery_type should be post_nl')
-    
+        self.assertEqual(
+            self.picking.carrier_id.delivery_type,
+            'post_nl',
+            'delivery_type should be post_nl')
+
     def test_picking_shipping_data(self):
         """Checking data types"""
-        data=self.carrier._prepare_shipping_body(self.picking)
-        self.assertEqual(type(data), type({}),
-                'data should be a dict')
+        data = self.carrier._prepare_shipping_body(self.picking)
+        self.assertEqual(
+            type(data),
+            type({}),
+            'data should be a dict')
 
     def test_picking_local_shipping_Customs(self):
         """Checking Customs doesn't exists"""
-        data=self.carrier._prepare_shipping_body(self.picking)
-        first_shipping=data['Shipments'][0]
-        keys= [*first_shipping.keys()]
-        self.assertEqual('Customs' in keys, False,
-                'No Customs For Loacal Shippings')
+        data = self.carrier._prepare_shipping_body(self.picking)
+        first_shipping = data['Shipments'][0]
+        keys = [*first_shipping.keys()]
+        self.assertEqual(
+            'Customs' in keys,
+            False,
+            'No Customs For Loacal Shippings')
 
     def test_picking_gloable_shipping_Customs(self):
         """Checking Customs exists for gloable shippings"""
-        data=self.carrier_gloable._prepare_shipping_body(self.picking_gloabale)
-        first_shipping=data['Shipments'][0]
-        keys= [*first_shipping.keys()]        
-        print('Customs' in keys)
-        self.assertEqual('Customs' in keys, True,
-                'Customs Required For Gloable Shippings')
+        data = self.carrier_gloable._prepare_shipping_body(self.picking_gloabale)
+        first_shipping = data['Shipments'][0]
+        keys = [*first_shipping.keys()]
+        self.assertEqual(
+            'Customs' in keys,
+            True,
+            'Customs Required For Gloable Shippings')
 
-
-
-
-    
+    def test_post_no_api_key(self):
+        """Get 401 Unauthorized If No API Key"""
+        data = self.carrier._prepare_shipping_body(self.picking)
+        response, status_code = PostNLRequets(
+                '', self.carrier.prod_environment).ship(data)
+        self.assertEqual(
+            str(status_code),
+            '401',
+            '401 Error If No Api Key')
