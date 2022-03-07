@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 from odoo import _
 from odoo.exceptions import ValidationError, UserError
 import requests

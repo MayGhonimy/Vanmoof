@@ -144,7 +144,7 @@ class DeliveryCarrier(models.Model):
             })
         return vals
 
-    def delivery_postnl_send_shipping(self, pickings):
+    def post_nl_send_shipping(self, pickings):
         _logger.info('starting the ship PostNL Porcess')
         for picking in pickings:
             data = self._prepare_shipping_body(picking)
@@ -171,17 +171,12 @@ class DeliveryCarrier(models.Model):
                       'Please Revise Your Shippment Data.')
                     )
 
-    def send_shipping(self, picking):
-        self.ensure_one()
-        super().send_shipping(picking)
-        return self.delivery_postnl_send_shipping(picking)
-
-    def get_tracking_link(self, picking):
+    def post_nl_get_tracking_link(self, picking):
         if picking.carrier_tracking_ref:
             url = 'https://www.internationalparceltracking.com/#/search?barcode='
             return '%s%s' % (url, picking.carrier_tracking_ref)
         else:
             return False
 
-    def cancel_shipment(self,  picking):
+    def post_nl_cancel_shipment(self,  picking):
         raise UserError(_("Can't Cancel PonstNL Shipments"))
