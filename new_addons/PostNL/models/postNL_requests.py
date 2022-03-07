@@ -33,9 +33,4 @@ class PostNLRequets:
             raise UserError(_('Error Connecting to PostNL : [%s]' % (e)))
         response_json_string = response.content.decode('utf-8')
         response_json_object = json.loads(str(response_json_string))
-        if response.status_code != 200:
-            raise ValidationError(
-                _(f"Error<{response.status_code}>:"
-                  f" {response_json_object['fault']['faultstring']}")
-                )
-        return dict(response_json_object)
+        return dict(response_json_object), response.status_code

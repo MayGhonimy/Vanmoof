@@ -149,9 +149,10 @@ class DeliveryCarrier(models.Model):
         for picking in pickings:
             data = self._prepare_shipping_body(picking)
             _logger.info('JSON body to the shipping api:  %s' % ((data)))
-            response = PostNLRequets(
+            response, status_code = PostNLRequets(
                 self.api_key, self.prod_environment).ship(data)
             _logger.info('PostNL Response :  %s' % (response))
+            _logger.info('PostNL Response Status Code :  %s' % (status_code))
 
             # TODO insepct repsonse and get barcode
             # or tracking_number and Generated file
@@ -166,10 +167,13 @@ class DeliveryCarrier(models.Model):
                             "tracking_number": response_shipment['Barcode']
                             }]
             except Exception:
-                raise UserError(
-                    _('Error While Shipping to PostNL.\n'
-                      'Please Revise Your Shippment Data.')
-                    )
+                if 'fault' in response:
+                    msg = _(f'Error<{status_code}>:\n'
+                            f" {response['fault']['faultstring']}")
+                else:
+                    msg = _('Error While Shipping to PostNL.\n'
+                            'Please Revise Your Shippment Data.')
+                raise UserError(msg)
 
     def post_nl_get_tracking_link(self, picking):
         if picking.carrier_tracking_ref:
