@@ -20,7 +20,7 @@ class DeliveryCarrier(models.Model):
         [('3085', '3085, Dutch domestic products -'
                   ' Standard shipping - Guaranteed Morning delivery'),
          ('4945', '4945: Global shipping')
-         # @ToDo add the rest of shipping types
+         # @TODo add the rest of shipping types
          ], default='3085', string="Default Product Code Delivery")
     postnl_gloable_license_nr = fields.Char("Global Shipping License")
     postnl_base_shipping_cost = fields.Float('Base Shipping Coast')
