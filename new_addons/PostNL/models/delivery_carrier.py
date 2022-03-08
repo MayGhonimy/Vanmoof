@@ -146,15 +146,17 @@ class DeliveryCarrier(models.Model):
         return vals
 
 
-    def delivery_postnl_send_shipping(self, pickings):
+    def post_nl_send_shipping(self, pickings):
+
         _logger.info('starting the ship PostNL Porcess')
         for picking in pickings:
             data = self._prepare_shipping_body(picking)
 
             _logger.info('JSON body to the shipping api:  %s' % ((data)))
-            response = PostNLRequets(
+            response, status_code = PostNLRequets(
                 self.api_key, self.prod_environment).ship(data)
             _logger.info('PostNL Response :  %s' % (response))
+            _logger.info('PostNL Response Status Code :  %s' % (status_code))
 
             # TODO insepct repsonse and get barcode
             # or tracking_number and Generated file
@@ -170,22 +172,20 @@ class DeliveryCarrier(models.Model):
                             "tracking_number": response_shipment['Barcode']
                             }]
             except Exception:
-                raise UserError(
-                    _('Error While Shipping to PostNL.\n'
-                      'Please Revise Your Shippment Data.')
-                    )
+                if 'fault' in response:
+                    msg = _(f'Error<{status_code}>:\n'
+                            f" {response['fault']['faultstring']}")
+                else:
+                    msg = _('Error While Shipping to PostNL.\n'
+                            'Please Revise Your Shippment Data.')
+                raise UserError(msg)
 
-    def send_shipping(self, picking):
-        self.ensure_one()
-        super().send_shipping(picking)
-        return self.delivery_postnl_send_shipping(picking)
-
-    def get_tracking_link(self, picking):
+    def post_nl_get_tracking_link(self, picking):
         if picking.carrier_tracking_ref:
             url = 'https://www.internationalparceltracking.com/#/search?barcode='
             return '%s%s' % (url, picking.carrier_tracking_ref)
         else:
             return False
 
-    def cancel_shipment(self,  picking):
+    def post_nl_cancel_shipment(self,  picking):
         raise UserError(_("Can't Cancel PonstNL Shipments"))
